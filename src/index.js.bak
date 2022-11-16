@@ -1,0 +1,33 @@
+const express = require('express');
+const path = require('path');
+const http = require('http');
+const socket = require('socket.io');
+
+const PORT = process.env.PORT || 3000;
+const publicDir = path.join(__dirname, '../public');
+
+const app = express();
+const server = http.createServer(app);
+const io = socket(server);
+
+app.use(express.json()); //parses json, like formdata.
+app.use(express.static(publicDir));
+
+app.get('', (req, res)=>{
+  res.render('index');
+});
+
+let count = 0;
+io.on('connection', (socket)=>{
+  console.log("New client connection to websocket server");
+  socket.emit('countUpdated', count);
+  socket.on('increment', ()=>{
+    count+=1;
+    // socket.emit('countUpdated', count); //This event is only emitted for single client, so other clients will not be notified.
+    io.emit('countUpdated', count); //emitting this for every client
+  })
+});
+
+server.listen(PORT, ()=>{
+  console.log(`listening on http://127.0.0.1:${PORT}`);
+});
